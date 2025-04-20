@@ -30,6 +30,7 @@ def analysis_page():
     st.header("Regression Analysis")
     st.write("This page allows you to perform regression analysis on your dataset.")
     st.write("Please upload your dataset in CSV format.")
+    st.write("Team Members: 1. Karan Karnik (EPGDPMAI/B3/2024/10) 2. Kishore Jadhav (EPGDPMAI/B3/2024/11) 3. Amrendra Rathore (EPGDPMAI/B3/2024/003) 4. Pankaj Pawar (EPGDPMAI/B3/2024/13)")
     uploaded_file = st.file_uploader("Upload CSV file", type=["csv"])
     
     if uploaded_file is not None:
