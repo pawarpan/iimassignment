@@ -454,7 +454,7 @@ def residual_plot(results_df):
         min_length = min(len(Ytest), len(predictions))
         residuals = Ytest.ravel() - predictions.ravel()        
 
-        st.write(f"Residual Plot for {regression}")
+        st.subheader(f"Residual Plot for {regression}" ,divider=True)
         fig, ax = plt.subplots()
         sns.scatterplot(x=predictions[:min_length].flatten(), y=residuals.flatten(), ax=ax, alpha=0.5, color='blue')
         ax.axhline(y=0, color='red', linestyle='--')
