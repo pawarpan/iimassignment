@@ -67,6 +67,7 @@ def analysis_page():
         
         target_variables = []
         target_variables.append(target_variable)
+
         X,Y=perform_preprocessing(df,features,target_variables)
 
         results_df = pd.DataFrame(columns=["Regression Type", "MSE", "R2 Score" , "Predictions" , "Y Test"])
