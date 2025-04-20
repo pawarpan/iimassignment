@@ -28,11 +28,12 @@ def main():
 
 def analysis_page():
     st.header("Regression Analysis Assigment")
-    st.write("Team Members:")
+    st.subheader("Team Members:", divider=True)
     st.write("- Karan Karnik (EPGDPMAI/B3/2024/10)")
     st.write("- Kishore Jadhav (EPGDPMAI/B3/2024/11)")
     st.write("- Amrendra Rathore (EPGDPMAI/B3/2024/003)")
     st.write("- Pankaj Pawar (EPGDPMAI/B3/2024/13)")
+    st.subheader("", divider=True)
     st.write("This page allows you to perform regression analysis on your dataset.")
     st.write("Please upload your dataset in CSV format.")
 
