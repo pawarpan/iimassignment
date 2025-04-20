@@ -4,6 +4,8 @@ import time
 from sklearn.impute import SimpleImputer
 import numpy as np
 import pickle as pt
+import seaborn as sns
+import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, r2_score  
@@ -46,7 +48,7 @@ def analysis_page():
         collist.remove(target_variable)
 
         features = st.multiselect("Select features", collist)
-        regression_list =["Multiple Linear Regression", "Polynomial Regression" ,"Decision Tree Regression" ,"Random Forest Regression"]
+        regression_list =["Multiple Linear Regression" ,"Decision Tree Regression" ,"Random Forest Regression"]
         regression_type = st.multiselect("Select regression type",regression_list )
 
         if len(features) == 0:
@@ -63,10 +65,7 @@ def analysis_page():
         results_df = pd.DataFrame(columns=["Regression Type", "MSE", "R2 Score" , "Predictions" , "Y Test"])
 
 
-
-
         if st.button("Run Regression"): 
-              
                 st.write("Performing regression analysis...")                  
                 with st.spinner("Running regression..."):
                     st.write("Splitting data into training and testing sets...")
@@ -120,6 +119,20 @@ def analysis_page():
                     plot_qq(regression, Ytest, predictions)
 
 
+                plot_model_error( )
+
+
+def plot_model_error():
+        st.subheader("Model Performance Comparison", divider=True)
+        fig, ax = plt.subplots()
+        sns.barplot(x=[row[0] for row in analysis_rows], y=[row[1] for row in analysis_rows], ax=ax)
+        ax.set_title("Model Performance (MSE)")
+        ax.set_xlabel("Regression Models")
+        ax.set_ylabel("Mean Squared Error (MSE)")
+        ax.tick_params(axis='x', rotation=45)  # Rotate x-axis labels by 45 degrees
+        st.pyplot(fig)
+
+
 def perform_preprocessing(df,features,target_variable):
     st.header("Performing preprocessing...", divider=True)
     
@@ -127,10 +140,6 @@ def perform_preprocessing(df,features,target_variable):
     Y = df[target_variable]
     
     st.write("features and target variable")
-    st.write(features)
-    st.write(target_variable)
-    type(features)
-    type(target_variable)
 
     st.markdown("###")
     st.write("**Independent Variables (X):**")
@@ -161,9 +170,8 @@ def perform_preprocessing(df,features,target_variable):
     # Check for categorical columns and apply SimpleImputer
     categorical_columns = np.array([not np.issubdtype(dtype, np.number) for dtype in df[features].dtypes])
     categorical_indices = np.where(categorical_columns)[0]
-    st.write("Categorical Columns and indices")
-    st.write(categorical_columns)
-    st.write(categorical_indices)
+    st.write("Categorical Column Names:")
+    st.write(df[features].columns[categorical_columns])
 
     if categorical_columns.size > 0:
         st.subheader("Handling Missing Values for Categorical Columns:",  divider=True)
@@ -173,7 +181,7 @@ def perform_preprocessing(df,features,target_variable):
         X[:, categorical_indices] = imputer.fit_transform(X[:, categorical_indices])
         st.write("Missing values in categorical columns have been imputed with the most frequent value.")
         for i, col in enumerate(df[features].columns[categorical_columns]):
-            st.write(f"Imputed value for column '{col}': {imputer.statistics_[i]}")
+            st.write(f"Imputed value for column  **{col}**: **{imputer.statistics_[i]}**")
 
         st.write("Independent Variables (X) after categorical imputation:")
         st.dataframe(X)
@@ -213,10 +221,8 @@ def perform_preprocessing(df,features,target_variable):
     
     #categorical_columns_y = not np.issubdtype(df[target_variable].dtype, np.number)
     #categorical_indices_y = [0] if categorical_columns_y else []
-    st.write(categorical_columns_y)
     if categorical_columns_y > 0:
-        st.write(df[target_variable].columns[categorical_columns_y])
-
+        #st.write(df[target_variable].columns[categorical_columns_y])
         imputer = SimpleImputer(strategy="most_frequent")
         X[:, categorical_indices_y] = imputer.fit_transform(X[:, categorical_indices_y])
         st.write("Missing values in categorical columns have been imputed with the most frequent value.")
@@ -226,7 +232,7 @@ def perform_preprocessing(df,features,target_variable):
         st.write("Dependent Variables (Y) after categorical imputation:")
         st.dataframe(X)
     else:
-        st.write("No categorical columns found for imputation.")
+        st.write("No categorical columns found for imputation for Dependent Variable.")
     
 
 
@@ -237,28 +243,20 @@ def perform_preprocessing(df,features,target_variable):
     numerical_columns_y = np.array([np.issubdtype(dtype, np.number) for dtype in df[target_variable].dtypes])
     numerical_indices_y = np.where(numerical_columns)[0]
 
-
-    #numerical_columns_y = np.issubdtype(df[target_variable].dtype, np.number)
-    #numerical_indices_y = [0] if numerical_columns_y else []
-    st.write(numerical_columns_y)
-    st.write(numerical_indices_y[0])
+    numerical_columns_y = np.array([np.issubdtype(dtype, np.number) for dtype in df[target_variable].dtypes])
+    #st.write(numerical_columns_y)
+    #st.write(numerical_indices_y[0])
     st.write(Y)
-    #Y = np.array(Y)  # Ensure Y is converted to a numpy ndarray
 
     print("print type")
     print(type(X))
     print(X)
     print(type(Y))
-    #Y=Y.iloc[:,:].values
     print(Y)
-    # Convert Y to the same type as X
 
     if numerical_columns_y:
-        #st.write(numerical_indices_y)
         imputer = SimpleImputer(strategy="mean")
         Y[:, numerical_columns_y] = imputer.fit_transform(Y[:, numerical_columns_y])
-
-        #Y[:, 0] = imputer.fit_transform(Y[:, 0])
         
         st.write("Imputed values for numerical columns:")
         imputed_data = {
@@ -273,9 +271,8 @@ def perform_preprocessing(df,features,target_variable):
 #-
 
 
-    st.write("Handling Missing Data Completed!")
-    
-    st.write("Independent Variables (X) after preprocessing:")
+    st.write("Handling Missing Data Completed!") 
+    st.write("Independent Variables (X) after handling Missing Data :")
     st.dataframe(X)  # Display first 5 rows of X as a dataframe
 
     #handle Categorical data.
@@ -337,10 +334,15 @@ def performregression(regression,features,target_variable,df,X,Y,Xtrain, Xtest, 
         return prmse, prr2, prpredictions, prYtest
     
     elif regression == "Decision Tree Regression":
+       st.write("Test Decision Tree Regression...")
+       st.write(Ytest)
        dtmse, dtr2 , dtpredictions, dtYtest=   perform_decision_tree_regression(features,target_variable,df,Xtrain,Ytrain,Xtest,Ytest)
        analysis_rows.append([regression,dtmse,dtr2,dtpredictions,dtYtest])
        return dtmse, dtr2, dtpredictions, dtYtest
+    
     elif regression == "Random Forest Regression":
+        st.write("Test Random Forest Regression...")
+        st.write(Ytest)
         rfmse, rfr2 , rfpredictions, rfYtest=  perform_random_forest_regression(features,target_variable,df,Xtrain,Ytrain,Xtest,Ytest)
         analysis_rows.append([regression,rfmse,rfr2,rfpredictions,rfYtest])
         return rfmse, rfr2, rfpredictions, rfYtest
@@ -392,10 +394,10 @@ def perform_decision_tree_regression(features,target_variable,df,Xtrain,Ytrain,X
     col1, col2 = st.columns(2)
     with col1:
         st.write("Actual Values (Ytest):")
-        st.dataframe(Ytest)
+        st.write(Ytest)
     with col2:
         st.write("Predicted Values:")
-        st.dataframe(predictions)
+        st.write(predictions)
     mse, r2 = dt.evaluate_model(Ytest, predictions)
     return mse, r2 , predictions, Ytest
 
@@ -410,6 +412,7 @@ def perform_random_forest_regression(features,target_variable,df,Xtrain,Ytrain,X
     import RandomForestRegression as rf
     rf.train_model(Xtrain, Ytrain)
     predictions = rf.predict(Xtest)
+
     st.write("Comparasion between actual value and predicted value against test data:")
     col1, col2 = st.columns(2)
     with col1:
