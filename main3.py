@@ -43,6 +43,9 @@ def analysis_page():
         df = pd.read_csv(uploaded_file)
         st.write("Data Preview:")
         st.dataframe(df.head())
+        st.subheader("Data Description:" , divider=True)    
+        st.dataframe(df.describe())
+        st.subheader("" , divider=True) 
 
         st.write("Select the target variable and features for regression analysis.")
         
@@ -71,6 +74,8 @@ def analysis_page():
         X,Y=perform_preprocessing(df,features,target_variables)
 
         results_df = pd.DataFrame(columns=["Regression Type", "MSE", "R2 Score" , "Predictions" , "Y Test"])
+
+        
 
 
         if st.button("Run Regression"): 
