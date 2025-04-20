@@ -91,8 +91,8 @@ def analysis_page():
                       st.write(f"Regression Type: {regression}")
                       st.write("Mean Squared Error:", mse)
                       st.write("R-squared:", r2)
-                      st.write("Predictions:{}" .format(predictions))
-                      st.write("Y Test:{}" .format(Ytest))       
+                      #st.write("Predictions:{}" .format(predictions))
+                      #st.write("Y Test:{}" .format(Ytest))       
   
                
                 st.header("Regression Analysis Results:",divider=True)
@@ -173,9 +173,10 @@ def perform_preprocessing(df,features,target_variable):
     st.write("Categorical Column Names:")
     st.write(df[features].columns[categorical_columns])
     #st.write(categorical_indices)
+    #st.write(type(categorical_indices))
     #st.write(categorical_columns.size)
 
-    if categorical_indices:
+    if categorical_indices.size > 0:
         st.subheader("Handling Missing Values for Categorical Columns:",  divider=True)
         st.write(df[features].columns[categorical_columns])
 
@@ -337,14 +338,14 @@ def performregression(regression,features,target_variable,df,X,Y,Xtrain, Xtest, 
     
     elif regression == "Decision Tree Regression":
        st.write("Test Decision Tree Regression...")
-       st.write(Ytest)
+       #st.write(Ytest)
        dtmse, dtr2 , dtpredictions, dtYtest=   perform_decision_tree_regression(features,target_variable,df,Xtrain,Ytrain,Xtest,Ytest)
        analysis_rows.append([regression,dtmse,dtr2,dtpredictions,dtYtest])
        return dtmse, dtr2, dtpredictions, dtYtest
     
     elif regression == "Random Forest Regression":
         st.write("Test Random Forest Regression...")
-        st.write(Ytest)
+        #st.write(Ytest)
         rfmse, rfr2 , rfpredictions, rfYtest=  perform_random_forest_regression(features,target_variable,df,Xtrain,Ytrain,Xtest,Ytest)
         analysis_rows.append([regression,rfmse,rfr2,rfpredictions,rfYtest])
         return rfmse, rfr2, rfpredictions, rfYtest
