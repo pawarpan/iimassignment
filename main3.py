@@ -134,6 +134,7 @@ def analysis_page():
 
 
                 plot_model_error( )
+                st.subheader("Residual Analysis", divider=True)
                 residual_plot(results_df)
 
 
@@ -444,9 +445,7 @@ def perform_random_forest_regression(features,target_variable,df,Xtrain,Ytrain,X
 
 def residual_plot(results_df):
     import matplotlib.pyplot as plt
-
     st.subheader("Residual Plot", divider=True)
-    
     for row in results_df.itertuples(index=False):
         regression = row[0]
         predictions = row[3]
