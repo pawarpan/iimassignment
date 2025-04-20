@@ -172,8 +172,10 @@ def perform_preprocessing(df,features,target_variable):
     categorical_indices = np.where(categorical_columns)[0]
     st.write("Categorical Column Names:")
     st.write(df[features].columns[categorical_columns])
+    #st.write(categorical_indices)
+    #st.write(categorical_columns.size)
 
-    if categorical_columns.size > 0:
+    if categorical_indices:
         st.subheader("Handling Missing Values for Categorical Columns:",  divider=True)
         st.write(df[features].columns[categorical_columns])
 
