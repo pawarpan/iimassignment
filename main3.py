@@ -130,9 +130,11 @@ def analysis_page():
                     predictions = row[3]
                     Ytest = row[4]
                     plot_qq(regression, Ytest, predictions)
+                    
 
 
                 plot_model_error( )
+                residual_plot(results_df)
 
 
 def plot_model_error():
@@ -440,11 +442,33 @@ def perform_random_forest_regression(features,target_variable,df,Xtrain,Ytrain,X
     mse, r2 = rf.evaluate_model(Ytest, predictions)
     return mse, r2 , predictions, Ytest
 
+def residual_plot(results_df):
+    import matplotlib.pyplot as plt
+
+    st.subheader("Residual Plot", divider=True)
+    
+    for row in results_df.itertuples(index=False):
+        regression = row[0]
+        predictions = row[3]
+        Ytest = row[4]
+
+        min_length = min(len(Ytest), len(predictions))
+        residuals = Ytest.ravel() - predictions.ravel()        
+
+        st.write(f"Residual Plot for {regression}")
+        fig, ax = plt.subplots()
+        sns.scatterplot(x=predictions[:min_length].flatten(), y=residuals.flatten(), ax=ax, alpha=0.5, color='blue')
+        ax.axhline(y=0, color='red', linestyle='--')
+        ax.set_title(f'Residuals vs Predicted Values ({regression})')
+        ax.set_xlabel('Predicted Values')
+        ax.set_ylabel('Residuals')
+        st.pyplot(fig)
+
+
 def plot_qq(regression, Ytest, predictions):
         import scipy.stats as stats
         import matplotlib.pyplot as plt
         import seaborn as sns
-
 
         st.subheader(f"QQ Plot for {regression}", divider=True)
         fig, ax = plt.subplots()
