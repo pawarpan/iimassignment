@@ -8,8 +8,9 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_squared_error, r2_score  
-  
+from sklearn.metrics import mean_squared_error, r2_score 
+import base64 
+
 
 
 analysis_rows=[]
@@ -27,39 +28,113 @@ def main():
     analysis_page()
 
 def analysis_page():
-    st.header("Regression Analysis Assigment")
+    st.header("Group 6: Generatative AI For Machine Learning Regression and Decision Tree")
+    st.write("This project is a part of the course EPGDPMAI at IIM Indore.")
     st.subheader("Team Members:", divider=True)
-    st.write("- Karan Karnik (EPGDPMAI/B3/2024/10)")
-    st.write("- Kishore Jadhav (EPGDPMAI/B3/2024/11)")
-    st.write("- Amrendra Rathore (EPGDPMAI/B3/2024/003)")
+    st.write("- Satyakam Tripathy (EPGDPMAI/B3/2024/020)")
+    st.write("- Ravinder Singh Gandhi (EPGDPMAI/B3/2024/017)")
+    st.write("- Sarandeep Singh (EPGDPMAI/B3/2024/019)")
+    st.write("- C Prashant Nair (EPGDPMAI/B3/2024/006)")
     st.write("- Pankaj Pawar (EPGDPMAI/B3/2024/13)")
     st.subheader("", divider=True)
     st.write("This page allows you to perform regression analysis on your dataset.")
-    st.write("Please upload your dataset in CSV format.")
+    st.write("Please upload your dataset in CSV,txt or xlsx format.")
 
-    uploaded_file = st.file_uploader("Upload CSV file", type=["csv"])
+    uploaded_file = st.file_uploader("Upload CSV file", type=["csv","txt","xlsx"])
+    separator = st.text_input("Enter separator (default is ',')", value=",")
     
+    st.subheader("Connect to ChatGPT for live Summary", divider=True)
+    connect_gpt = st.checkbox("Connect to ChatGPT for live Summary ??", key="connect_gpt")
+
+    gpt_key=""
+    if connect_gpt:
+        gpt_key = st.text_input("Enter your GPT API Key", type="password", key="gpt_key")
+
+
+    if st.button("Confirm and Proceed"):
+        st.write("You can now proceed with the analysis.")
+        
+
+
     if uploaded_file is not None:
-        df = pd.read_csv(uploaded_file)
+        if uploaded_file.name.endswith('.xlsx'):
+            df = pd.read_excel(uploaded_file, engine='openpyxl')
+        else:
+            df = pd.read_csv(uploaded_file, sep=separator)
+        st.write("File uploaded successfully!")
         st.write("Data Preview:")
         st.dataframe(df.head())
         st.subheader("Data Description:" , divider=True)    
         st.dataframe(df.describe())
         st.subheader("" , divider=True) 
 
+        st.subheader("Corelation graph:", divider=True)
+        fig, ax = plt.subplots(figsize=(10, 6))
+        corr = df.corr()
+        sns.heatmap(corr, annot=True, cmap='coolwarm', ax=ax)
+        ax.set_title("Correlation Matrix")
+        st.pyplot(fig)
+        st.subheader("", divider=True)
+
+        # Call the function where needed
+        if connect_gpt and gpt_key:
+            analyze_correlation_with_gpt(gpt_key, corr)
+
+        st.subheader("Exploratory Data Analysis (EDA)", divider=True)
+        st.write("**1. Checking for Missing Values:**")
+        missing_values = df.isnull().sum()
+        st.dataframe(missing_values[missing_values > 0])
+
+        st.write("**2. Distribution of Numerical Features:**")
+        num_cols = df.select_dtypes(include=[np.number]).columns
+        if len(num_cols) > 0:
+            for col in num_cols:
+                fig, ax = plt.subplots()
+                sns.histplot(df[col].dropna(), kde=True, ax=ax)
+                ax.set_title(f"Distribution of {col}")
+                st.pyplot(fig)
+                # Save the plot as an image file
+                plot_filename = f"{col}_distribution_plot.png"
+                fig.savefig(plot_filename)
+                st.write(f"Plot saved as {plot_filename}")
+                        # Call the function where needed
+                if connect_gpt and gpt_key: 
+                    analyze_correlation_with_gpt(gpt_key, plot_filename, isimage=True)
+                    
+        else:
+            st.write("No numerical columns to display.")
+          
+        st.write("**3. Count Plots for Categorical Features:**")
+        cat_cols = df.select_dtypes(include=['object', 'category']).columns
+        if len(cat_cols) > 0:
+            for col in cat_cols:
+                fig, ax = plt.subplots()
+                df[col].value_counts().plot(kind='bar', ax=ax)
+                ax.set_title(f"Count Plot of {col}")
+                ax.set_xlabel(col)
+                ax.set_ylabel("Count")
+                st.pyplot(fig)
+        else:
+            st.write("No categorical columns to display.")
+
+
+
+        st.write("You can now proceed with the analysis.")
+        st.subheader("Select Features for Feature Analysis", divider=True)
         st.write("Select the target variable and features for regression analysis.")
-        
+
         numerical_columns = df.select_dtypes(include=[np.number]).columns
         if len(numerical_columns) == 0:
-            st.error("No numerical columns found in the dataset for target variable selection.")
-            return
-        target_variable = st.selectbox("Select target variable", numerical_columns)
-        collist= df.columns.tolist()
-        collist.remove(target_variable)
+                st.error("No numerical columns found in the dataset for target variable selection.")
+                return
+        target_variable = st.selectbox("Select target variable", numerical_columns, key="target_variable")
+        collist = df.columns.tolist()
+        if target_variable in collist:
+                collist.remove(target_variable)
 
-        features = st.multiselect("Select features", collist)
-        regression_list =["Multiple Linear Regression" ,"Decision Tree Regression" ,"Random Forest Regression"]
-        regression_type = st.multiselect("Select regression type",regression_list )
+        features = st.multiselect("Select features", collist, key="features")
+        regression_list = ["Multiple Linear Regression", "Decision Tree Regression", "Random Forest Regression"]
+        regression_type = st.multiselect("Select regression type", regression_list, key="regression_type")
 
         if len(features) == 0:
                 st.error("Please select at least one feature.")
@@ -67,75 +142,75 @@ def analysis_page():
                 st.error("Please select a regression type.")
         if len(target_variable) == 0:
                 st.error("Please select a target variable.")
-        
-        target_variables = []
-        target_variables.append(target_variable)
 
-        X,Y=perform_preprocessing(df,features,target_variables)
+        if len(features) > 0 and len(regression_type) > 0 and len(target_variable) > 0:
+                target_variables = [target_variable]
 
-        results_df = pd.DataFrame(columns=["Regression Type", "MSE", "R2 Score" , "Predictions" , "Y Test"])
+                X, Y = perform_preprocessing(df, features, target_variables)
+                results_df = pd.DataFrame(columns=["Regression Type", "MSE", "R2 Score", "Predictions", "Y Test"])
 
-        
+                if "run_regression" not in st.session_state:
+                    st.session_state.run_regression = False
 
+                run_regression_clicked = st.button("Run Regression")
 
-        if st.button("Run Regression"): 
-                st.write("Performing regression analysis...")                  
-                with st.spinner("Running regression..."):
-                    st.write("Splitting data into training and testing sets...")
-                    Xtrain, Xtest, Ytrain, Ytest = train_test_split(X, Y, test_size=0.2, random_state=42)
-                    st.write("Data split completed!")                     
+                if run_regression_clicked:
+                    st.session_state.run_regression = True
 
-                    st.write("Training and testing sets created!")
-                    st.write("Training set size:", Xtrain.shape[0])
-                    st.write("Testing set size:", Xtest.shape[0])
-                    st.write(X)
-                    
-                    st.write("Training set preview with column headers:")
-                    training_df = pd.DataFrame(Xtrain, columns=[f"Feature_{i}" for i in range(Xtrain.shape[1])])
-                    st.dataframe(training_df.head())
-                    
-                    st.write("Testing set preview with column headers:")
-                    testing_df = pd.DataFrame(Xtest, columns=[f"Feature_{i}" for i in range(Xtest.shape[1])])
-                    st.dataframe(testing_df.head())
+                if st.session_state.run_regression:
+                    st.write("Performing regression analysis...")
+                    with st.spinner("Running regression..."):
+                        st.write("Splitting data into training and testing sets...")
+                        Xtrain, Xtest, Ytrain, Ytest = train_test_split(X, Y, test_size=0.2, random_state=42)
+                        st.write("Data split completed!")
 
+                        st.write("Training and testing sets created!")
+                        st.write("Training set size:", Xtrain.shape[0])
+                        st.write("Testing set size:", Xtest.shape[0])
+                        st.write(X)
 
-                    for regression in regression_type:
-                      mse,r2 , predictions, Ytest= performregression(regression,features,target_variable,df,X,Y,Xtrain, Xtest, Ytrain, Ytest)
-                      st.write(f"Regression Type: {regression}")
-                      st.write("Mean Squared Error:", mse)
-                      st.write("R-squared:", r2)
-                      #st.write("Predictions:{}" .format(predictions))
-                      #st.write("Y Test:{}" .format(Ytest))       
-  
-               
-                st.header("Regression Analysis Results:",divider=True)
-                results_df = pd.DataFrame(analysis_rows, columns=["Regression Type", "MSE", "R2 Score" , "Predictions" , "Y Test"])
-                
-                st.write("Regression analysis results:")
-                st.write("This table shows the regression type, Mean Squared Error (MSE), and R-squared values.")
-                st.write("The MSE indicates the average squared difference between predicted and actual values.")
-                st.write("The R-squared value indicates the proportion of variance explained by the model.")
-                
-                st.dataframe(results_df[["Regression Type", "MSE", "R2 Score"]])
-                st.success("Regression analysis completed!")
-                st.write("Target Variable:", target_variable)
-                st.write("Selected Features:", features)
+                        st.write("Training set preview with column headers:")
+                        training_df = pd.DataFrame(Xtrain, columns=[f"Feature_{i}" for i in range(Xtrain.shape[1])])
+                        st.dataframe(training_df.head())
 
-                st.subheader("QQ Plot Analysis", divider=True)
-             
-                for row in results_df.itertuples(index=False):
-                    regression = row[0]
-                    mse = row[1]
-                    r2 = row[2]
-                    predictions = row[3]
-                    Ytest = row[4]
-                    plot_qq(regression, Ytest, predictions)
-                    
+                        st.write("Testing set preview with column headers:")
+                        testing_df = pd.DataFrame(Xtest, columns=[f"Feature_{i}" for i in range(Xtest.shape[1])])
+                        st.dataframe(testing_df.head())
 
+                        for regression in regression_type:
+                            mse, r2, predictions, Ytest = performregression(regression, features, target_variable, df, X, Y, Xtrain, Xtest, Ytrain, Ytest)
+                            st.write(f"Regression Type: {regression}")
+                            st.write("Mean Squared Error:", mse)
+                            st.write("R-squared:", r2)
+                            # st.write("Predictions:{}" .format(predictions))
+                            # st.write("Y Test:{}" .format(Ytest))
 
-                plot_model_error( )
-                st.subheader("Residual Analysis", divider=True)
-                residual_plot(results_df)
+                    st.header("Regression Analysis Results:", divider=True)
+                    results_df = pd.DataFrame(analysis_rows, columns=["Regression Type", "MSE", "R2 Score", "Predictions", "Y Test"])
+
+                    st.write("Regression analysis results:")
+                    st.write("This table shows the regression type, Mean Squared Error (MSE), and R-squared values.")
+                    st.write("The MSE indicates the average squared difference between predicted and actual values.")
+                    st.write("The R-squared value indicates the proportion of variance explained by the model.")
+
+                    st.dataframe(results_df[["Regression Type", "MSE", "R2 Score"]])
+                    st.success("Regression analysis completed!")
+                    st.write("Target Variable:", target_variable)
+                    st.write("Selected Features:", features)
+
+                    st.subheader("QQ Plot Analysis", divider=True)
+
+                    for row in results_df.itertuples(index=False):
+                        regression = row[0]
+                        mse = row[1]
+                        r2 = row[2]
+                        predictions = row[3]
+                        Ytest = row[4]
+                        plot_qq(regression, Ytest, predictions)
+
+                    plot_model_error()
+                    st.subheader("Residual Analysis", divider=True)
+                    residual_plot(results_df)
 
 
 def plot_model_error():
@@ -474,5 +549,77 @@ def plot_qq(regression, Ytest, predictions):
         stats.probplot((Ytest - predictions).flatten(), dist="norm", plot=ax)
         ax.get_lines()[1].set_color('red')  # Set the line of best fit to red
         st.pyplot(fig)
+
+
+
+def chat_with_gpt(api_key ,df , input_text):
+    import openai
+    print("Welcome to ChatGPT CLI (type 'exit' to quit)")
+    openai.api_key=api_key
+    conversation = []
+    
+    print("Inside Chatp GPT")
+    user_input = input_text
+
+    # Convert the dataframe to a string (e.g., CSV format) to pass as context
+    df_string = df.to_csv(index=False)
+
+    # Add the dataframe as a system message to provide context to ChatGPT
+    conversation.append({
+        "role": "system",
+        "content": f"The following is the data you should use for answering questions:\n{df_string}"
+    })
+    conversation.append({"role": "user", "content": user_input})
+    try:
+            response = openai.ChatCompletion.create(
+                model="gpt-3.5-turbo",  # Or use "gpt-3.5-turbo" if you want a cheaper option
+                messages=conversation
+            )
+            reply = response.choices[0].message['content'].strip()
+            conversation.append({"role": "assistant", "content": reply})
+            print("ChatGPT:", reply)
+            return reply
+    except Exception as e:
+            print("Error:", e)
+
+
+def analyze_correlation_with_gpt(gpt_key, dataforgpt , isimage=False):
+            st.subheader("ChatGPT Output:", divider=True)
+            reply=""
+            with st.spinner("Connecting to ChatGPT and analyzing correlation..."):
+                if not isimage:
+                    reply = chat_with_gpt(gpt_key, dataforgpt, "Please do analysis of correlation, give me their explanation in section wise.")
+                elif isimage:
+                    reply = chat_with_gpt_image(gpt_key, dataforgpt, "Please do analysis of correlation, give me their explanation in section wise.")
+            st.subheader("ChatGPT Response:", divider=True)
+            st.write(reply)
+            st.subheader("", divider=True)
+
+
+# Load and encode the image
+def encode_image_to_base64(image_path):
+    with open(image_path, "rb") as image_file:
+        return base64.b64encode(image_file.read()).decode('utf-8')
+
+def  chat_with_gpt_image(api_key ,img , input_text):
+    import openai
+    # Encode plot image
+    image_base64 = encode_image_to_base64(img)
+
+    # Call OpenAI with image
+    response = openai.ChatCompletion.create(
+        model="gpt-4o",  # GPT-4 with vision
+        messages=[
+            {"role": "user", "content": [
+                {"type": "text", "text": "Please summarize the plot shown in the image."},
+                {"type": "image_url", "image_url": {
+                    "url": f"data:image/png;base64,{image_base64}"
+                }}
+            ]}
+        ],
+        max_tokens=500
+    )
+
+    return response.choices[0].message['content']
 
 main()
