@@ -4,7 +4,7 @@ def chat_with_gpt(api_key ,df , input_text):
     import openai
     print("Welcome to ChatGPT CLI (type 'exit' to quit)")
     openai.api_key=api_key
-    openai.api_key = "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" 
+    
     conversation = []
     
     print("Inside Chatp GPT")
